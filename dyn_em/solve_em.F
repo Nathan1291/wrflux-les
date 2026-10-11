@@ -79,6 +79,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
    USE module_llxy, ONLY : proj_cassini
    USE module_avgflx_em, ONLY : zero_avgflx, upd_avgflx
    USE module_cpl, ONLY : coupler_on, cpl_settime, cpl_store_input
+   USE module_LRF, ONLY : read_target_profiles, relax_var_to_profile
 
 #if (WRF_CMAQ == 1)
    use twoway_data_module
@@ -3593,6 +3594,8 @@ BENCH_END(advance_ppt_tim)
         CALL phy_prep_part2 ( config_flags,                              &
                         grid%muts, grid%muus, grid%muvs,                 &
                         grid%c1h, grid%c2h, grid%c1f, grid%c2f,          &
+                        grid%rthrelaxten, grid%rqvrelaxten,              &
+                        grid%rurelaxten, grid%rvrelaxten,                & 
                         grid%rthraten,                                   &
                         grid%rthblten, grid%rublten, grid%rvblten,       &
                         grid%rqvblten, grid%rqcblten, grid%rqiblten,     &

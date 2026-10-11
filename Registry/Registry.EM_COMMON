@@ -1693,7 +1693,7 @@ state    real  RQVFTEN          ikj     misc        1         -      r        "R
 
 state integer  STEPCU          -        misc        1         -      r        "STEPCU"                "NUMBER OF FUNDAMENTAL TIMESTEPS BETWEEN CONVECTION CALLS"  ""
                                                 
-state    real  RTHRATEN        ikj      misc        1         -      rd       "RTHRATEN"              "THETA TENDENCY DUE TO RADIATION"              "K s-1"
+state    real  RTHRATEN        ikj      misc        1         -      rdh      "RTHRATEN"              "THETA TENDENCY DUE TO RADIATION"              "K s-1"
 state    real  RTHRATENLW      ikj      misc        1         -      r        "RTHRATLW"              "UNCOUPLED THETA TENDENCY DUE TO LONG WAVE RADIATION"    "K s-1"
 state    real  RTHRATENLWC     ikj      misc        1         -      r        "RTHRATLWC"             "UNCOUPLED THETA TEND DUE TO CLEAR SKY LONG WAVE RAD"    "K s-1"
 state    real  RTHRATENSW      ikj      misc        1         -      r        "RTHRATSW"              "UNCOUPLED THETA TENDENCY DUE TO SHORT WAVE RADIATION"   "K s-1"
@@ -1861,6 +1861,15 @@ state    real  RQVBLTEN        ikj      misc        1         -      r        "R
 state    real  RQCBLTEN        ikj      misc        1         -      r        "RQCBLTEN"              "Q_C TENDENCY DUE TO PBL PARAMETERIZATION"     "kg kg-1 s-1"
 state    real  RQIBLTEN        ikj      misc        1         -      r        "RQIBLTEN"              "Q_I TENDENCY DUE TO PBL PARAMETERIZATION"     "kg kg-1 s-1"
 state    real  RQNIBLTEN       ikj      misc        1         -      r        "RQNIBLTEN"             "Q_NI TENDENCY DUE TO PBL PARAMETERIZATION"    "#  kg-1 s-1"
+
+state  real  RTHRELAXTEN             ikj  misc  1  -  rh  "RTHRELAXTEN"             "RELAXATION THETA TENDENCY"   "K s-1"
+state  real  RQVRELAXTEN             ikj  misc  1  -  rh  "RQVRELAXTEN"             "RELAXATION Q_V TENDENCY"     "kg kg-1 s-1"
+state  real  RURELAXTEN              ikj  misc  1  -  rh  "RURELAXTEN"              "RELAXATION U TENDENCY"       "m s-1"
+state  real  RVRELAXTEN              ikj  misc  1  -  rh  "RVRELAXTEN"              "RELAXATION V TENDENCY"       "m s-1"
+state  real  RELAX_U_TARGET_PROFILE  k    misc  1  -  rh  "RELAX_U_TARGET_PROFILE"  "TARGET PROFILE FOR U"        "m s-1"
+state  real  RELAX_V_TARGET_PROFILE  k    misc  1  -  rh  "RELAX_V_TARGET_PROFILE"  "TARGET PROFILE FOR V"        "m s-1"
+state  real  RELAX_T_TARGET_PROFILE  k    misc  1  -  rh  "RELAX_T_TARGET_PROFILE"  "TARGET (RCE) PROFILE FOR T"  "K"
+state  real  RELAX_Q_TARGET_PROFILE  k    misc  1  -  rh  "RELAX_Q_TARGET_PROFILE"  "TARGET (RCE) PROFILE FOR Q"  "kg kg-1"
 
 # For Noah UA changes
 state    real   flx4            ij         -        1         -      -        "FLX4"         "sensible heat from canopy"              "W m{-2}"
@@ -3006,6 +3015,16 @@ rconfig   real        windfarm_tke_factor namelist,physics      1              0
 #
 # Ideal case selection
 rconfig   integer     ideal_case          namelist,ideal        1              0       rh       "ideal_case"                 ""      ""
+
+rconfig  logical   relax_u_winds         namelist,nudging_control  1  .false.     -  "relax_u_winds"         "Relax U wind in stratosphere towards target profiles?"        ""
+rconfig  logical   relax_v_winds         namelist,nudging_control  1  .false.     -  "relax_v_winds"         "Relax V wind in stratosphere towards target profiles?"        ""
+rconfig  logical   relax_temp            namelist,nudging_control  1  .false.     -  "relax_v_winds"         "Relax T in stratosphere towards target profiles?"             ""
+rconfig  logical   relax_qvapor          namelist,nudging_control  1  .false.     -  "relax_v_winds"         "Relax Q in stratosphere towards target profiles?"             ""
+rconfig  real      relaxation_time_scale namelist,nudging_control  1  10800.      -  "relaxation_time_scale" "Time scale for nudging."                                          "s"
+rconfig  character relax_t_profile_file  namelist,nudging_control  1  "t_profile" -  "relax_t_profile_file"  "Target profile file for T."                                   ""
+rconfig  character relax_q_profile_file  namelist,nudging_control  1  "q_profile" -  "relax_q_profile_file"  "Target profile file for q."                                   ""
+rconfig  character relax_u_profile_file  namelist,nudging_control  1  "u_profile" -  "relax_u_profile_file"  "Target profile file for U."                                   ""
+rconfig  character relax_v_profile_file  namelist,nudging_control  1  "v_profile" -  "relax_v_profile_file"  "Target profile file for V."                                   ""
 #---------------------------------------------------------------------------------------------------------------------------------------
 # Package Declarations
 #                                               
@@ -3419,6 +3438,7 @@ halo      HALO_EM_VINTERP_UV_1 dyn_em 48:pd_gc,pb,pmaxw,ptrop,pmaxwnn,ptropnn
 halo      HALO_EM_A dyn_em  8:ru,rv,rw,ww,php,alt,al,p,muu,muv,mut,rho
 halo      HALO_EM_PHYS_A  dyn_em 4:u_2,v_2
 halo      HALO_EM_PHYS_PBL dyn_em        4:rublten,rvblten
+halo      HALO_EM_PHYS_WINDRELAX dyn_em  4:rurelaxten,rvrelaxten
 halo      HALO_EM_PHYS_CU dyn_em         4:rucuten,rvcuten
 halo      HALO_EM_PHYS_SHCU dyn_em       4:rushten,rvshten
 halo      HALO_EM_FDDA dyn_em            4:rundgdten,rvndgdten
@@ -3533,6 +3553,7 @@ period    PERIOD_EM_HYDRO_UV dyn_em 1:u_2,v_2
 period    PERIOD_BDY_EM_A dyn_em 2:ru,rv,rw,ww,php,alt,p,muu,muv,mut,ph_2,al,rho
 period    PERIOD_BDY_EM_A1  dyn_em 3:rdzw,rdz,z,zx,zy,ustm,ust
 period    PERIOD_BDY_EM_PHY_BC dyn_em 2:rublten,rvblten,rucuten,rvcuten,rushten,rvshten,xkmh,xkmv,xkhh,xkhv,div,defor11,defor22,defor12,defor13,defor23,defor33,tke_2,rho,gamu,gamv,xkmv_meso
+period    PERIOD_BDY_EM_PHY_WINDRELAX dyn_em 2:rurelaxten,rvrelaxten
 period    PERIOD_BDY_EM_FDDA_BC dyn_em 2:rundgdten,rvndgdten
 period    PERIOD_BDY_EM_B dyn_em 2:ru_tend,rv_tend,ph_2,al,p,t_1,t_save,u_save,v_save,mu_1,mu_2,mudf,php,alt,pb
 period    PERIOD_BDY_EM_B3 dyn_em 2:ph_2,al,p,mu_2,muts,mudf

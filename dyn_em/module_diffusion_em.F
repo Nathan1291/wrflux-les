@@ -6118,6 +6118,7 @@ SUBROUTINE phy_bc ( config_flags,div,defor11,defor22,defor33,              &
                     RUBLTEN, RVBLTEN,                                      &
                     RUCUTEN, RVCUTEN,                                      &
                     RUSHTEN, RVSHTEN,                                      &
+                    rurelaxten, rvrelaxten,                                &
                     gamu, gamv, xkmv_meso,                                 & ! XZ
                     ids, ide, jds, jde, kds, kde,                          &
                     ims, ime, jms, jme, kms, kme,                          &
@@ -6142,6 +6143,8 @@ SUBROUTINE phy_bc ( config_flags,div,defor11,defor22,defor33,              &
                                                                  RVCUTEN, &
                                                                  RUSHTEN, &
                                                                  RVSHTEN, &
+                                                                 rurelaxten, &
+                                                                 rvrelaxten, &
                                                                  defor11, &
                                                                  defor22, &
                                                                  defor33, &
@@ -6176,6 +6179,22 @@ SUBROUTINE phy_bc ( config_flags,div,defor11,defor22,defor33,              &
                                 its, ite, jts, jte, kts, kte              )
 
    ENDIF
+
+   if(config_flags%relax_u_winds .eqv. .true.) then
+      call set_physical_bc3d(rurelaxten, 't', config_flags, &
+           ids, ide, jds, jde, kds, kde,                    &
+           ims, ime, jms, jme, kms, kme,                    &
+           ips, ipe, jps, jpe, kps, kpe,                    &
+           its, ite, jts, jte, kts, kte)
+   endif
+
+   if(config_flags%relax_v_winds .eqv. .true.) then
+      call set_physical_bc3d(rvrelaxten, 't', config_flags, &
+           ids, ide, jds, jde, kds, kde,                    &
+           ims, ime, jms, jme, kms, kme,                    &
+           ips, ipe, jps, jpe, kps, kpe,                    &
+           its, ite, jts, jte, kts, kte)
+   endif
 
    IF(config_flags%cu_physics .GT. 0) THEN
 

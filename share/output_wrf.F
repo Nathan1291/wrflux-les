@@ -103,6 +103,8 @@
 
     LOGICAL, EXTERNAL :: wrf_dm_on_monitor
 
+    integer :: tmpint
+
     WRITE(wrf_err_message,*)'output_wrf: begin, fid = ',fid
     CALL wrf_debug( 300 , wrf_err_message )
 
@@ -609,6 +611,21 @@ endif
 #if (EM_CORE == 1)
           CALL wrf_put_dom_ti_char ( fid , 'GRIDTYPE',  'C' , ierr )
 #endif
+          tmpint = merge(1.d0, 0.d0, config_flags%relax_temp)
+          call wrf_put_dom_ti_integer(fid, "RELAX_TEMP", tmpint, 1, ierr)
+
+          tmpint = merge(1.d0, 0.d0, config_flags%relax_qvapor)
+          call wrf_put_dom_ti_integer(fid, "RELAX_QVAPOR", tmpint, 1, ierr)
+
+          tmpint = merge(1.d0, 0.d0, config_flags%relax_u_winds)
+          call wrf_put_dom_ti_integer(fid, "RELAX_U_WINDS", tmpint, 1, ierr)
+
+          tmpint = merge(1.d0, 0.d0, config_flags%relax_v_winds)
+          call wrf_put_dom_ti_integer(fid, "RELAX_V_WINDS", tmpint, 1, ierr)
+          
+          call wrf_put_dom_ti_real(fid, "RELAXATION_TIME_SCALE", &
+               config_flags%relaxation_time_scale, 1, ierr)
+
 
 ! added these fields for W. Skamarock, 020402, JM
     ibuf(1) = diff_opt

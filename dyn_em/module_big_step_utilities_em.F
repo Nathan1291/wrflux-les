@@ -5180,6 +5180,8 @@ END SUBROUTINE phy_prep
    SUBROUTINE phy_prep_part2 ( config_flags,                          &
                          mut,muu,muv,                                 &
                          c1h, c2h, c1f, c2f,                          &
+                         rthrelaxten, rqvrelaxten,                    &
+                         rurelaxten, rvrelaxten,                      &
                          RTHRATEN,                                    &
                          RTHBLTEN, RUBLTEN, RVBLTEN,                  &
                          RQVBLTEN, RQCBLTEN, RQIBLTEN,                &
@@ -5236,7 +5238,11 @@ END SUBROUTINE phy_prep
                                                            RTHBLTEN, &
                                                            RQVBLTEN, &
                                                            RQCBLTEN, &
-                                                           RQIBLTEN
+                                                           RQIBLTEN,    &
+                                                           rthrelaxten, &
+                                                           rqvrelaxten, &
+                                                           rurelaxten,  &
+                                                           rvrelaxten
 
    REAL,  DIMENSION( ims:ime, kms:kme, jms:jme )                   , &
           INTENT(INOUT)   ::                                RTHFTEN, &
@@ -5439,6 +5445,46 @@ END SUBROUTINE phy_prep
       ENDIF
 
    ENDIF
+
+   if(config_flags%relax_temp .eqv. .true.) then
+      DO J=j_start,j_end
+         DO K=k_start,k_end
+            DO I=i_start,i_end
+               rthrelaxten(I,K,J)=rthrelaxten(I,K,J)/(c1(k)*MUT(I,J)+c2(k))
+            ENDDO
+         ENDDO
+      ENDDO
+   endif
+         
+   if(config_flags%relax_qvapor .eqv. .true.) then
+      DO J=j_start,j_end
+         DO K=k_start,k_end
+            DO I=i_start,i_end
+               rqvrelaxten(I,K,J)=rqvrelaxten(I,K,J)/(c1(k)*MUT(I,J)+c2(k))
+            ENDDO
+         ENDDO
+      ENDDO
+   endif
+         
+   if(config_flags%relax_u_winds .eqv. .true.) then
+      DO J=j_start,j_end
+         DO K=k_start,k_end
+            DO I=i_start,i_end
+               rurelaxten(I,K,J) = rurelaxten(I,K,J)/(c1(k)*MUT(I,J)+c2(k))
+            ENDDO
+         ENDDO
+      ENDDO
+   endif
+
+   if(config_flags%relax_v_winds .eqv. .true.) then
+      DO J=j_start,j_end
+         DO K=k_start,k_end
+            DO I=i_start,i_end
+               rvrelaxten(I,K,J) = rvrelaxten(I,K,J)/(c1(k)*MUT(I,J)+c2(k))
+            ENDDO
+         ENDDO
+      ENDDO
+   endif
 
    IF (config_flags%bl_pbl_physics .gt. 0) THEN
 

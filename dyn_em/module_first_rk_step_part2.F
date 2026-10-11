@@ -42,6 +42,7 @@ CONTAINS
     USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic, &
                           wrf_dm_maxval, wrf_err_message, local_communicator_x, local_communicator_y
     USE module_comm_dm, ONLY : halo_em_tke_c_sub,halo_em_tke_d_sub,halo_em_tke_e_sub            &
+         ,halo_em_phys_windrelax_sub,period_bdy_em_phy_windrelax_sub &
             ,halo_em_phys_pbl_sub,halo_em_phys_shcu_sub &
             ,halo_em_fdda_sub,halo_em_phys_diffusion_sub,halo_em_tke_3_sub &
             ,halo_em_tke_5_sub,halo_obs_nudge_sub,period_bdy_em_a1_sub,period_bdy_em_phy_bc_sub &
@@ -393,6 +394,8 @@ BENCH_START(cal_phy_tend)
         CALL calculate_phy_tend (config_flags,grid%c1h,grid%c2h,       &
                      grid%mut,grid%muu,grid%muv,pi_phy,                &
                      grid%rthraten,                                    &
+                     grid%rthrelaxten, grid%rqvrelaxten,               &
+                     grid%rurelaxten, grid%rvrelaxten,                 &
                      grid%rublten,grid%rvblten,grid%rthblten,          &
                      grid%rqvblten,grid%rqcblten,grid%rqiblten,        &
                      grid%rucuten,grid%rvcuten,grid%rthcuten,          &
@@ -645,6 +648,10 @@ BENCH_END(calc_tke_tim)
 #      include "PERIOD_BDY_EM_FDDA_BC.inc"
        ENDIF
 #      include "PERIOD_BDY_EM_CHEM.inc"
+       if ((config_flags%relax_u_winds .eqv. .true.) .or. &
+            (config_flags%relax_v_winds .eqv. .true.)) then
+#      include "PERIOD_BDY_EM_PHY_WINDRELAX.inc"
+       endif
 #endif
 
 BENCH_START(phy_bc_tim)
@@ -661,6 +668,7 @@ BENCH_START(phy_bc_tim)
                       grid%rublten, grid%rvblten,                  &
                       grid%rucuten, grid%rvcuten,                  &
                       grid%rushten, grid%rvshten,                  &
+                      grid%rurelaxten, grid%rvrelaxten,            &
                       grid%gamu, grid%gamv, grid%xkmv_meso,        &  ! XZ
                       ids, ide, jds, jde, kds, kde,                &
                       ims, ime, jms, jme, kms, kme,                &
@@ -735,6 +743,10 @@ ENDIF
        IF ( config_flags%shcu_physics .gt. 1 ) THEN
 #      include "HALO_EM_PHYS_SHCU.inc"
        ENDIF
+       if ((config_flags%relax_u_winds .eqv. .true.) .or. &
+            (config_flags%relax_v_winds .eqv. .true.)) then
+#      include "HALO_EM_PHYS_WINDRELAX.inc"
+       endif
        IF ( config_flags%cu_physics == SASSCHEME      .or.   &
             config_flags%cu_physics == TIEDTKESCHEME  .or.   &
             config_flags%cu_physics == NTIEDTKESCHEME .or.   &
@@ -793,7 +805,10 @@ BENCH_START(update_phy_ten_tim)
 #endif
          CALL update_phy_ten(ph_tendf,t_tendf, ru_tendf, rv_tendf,moist_tend ,&
                            scalar_tend, mu_tendf,                           &
-                           grid%rthraten,grid%rthblten,grid%rthcuten,grid%rthshten, &
+                           grid%rthraten,                                   &
+                           grid%rthrelaxten, grid%rqvrelaxten,              &
+                           grid%rurelaxten, grid%rvrelaxten,                &
+                           grid%rthblten,grid%rthcuten,grid%rthshten,       &
                            grid%rublten,grid%rucuten,grid%rushten,          &
                            grid%rvblten,grid%rvcuten,grid%rvshten,          &
                            grid%rqvblten,grid%rqcblten,grid%rqiblten,       &
